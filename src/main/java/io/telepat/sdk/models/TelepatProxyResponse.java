@@ -1,15 +1,13 @@
 package io.telepat.sdk.models;
 
-import java.util.List;
 
-import retrofit.RetrofitError;
-import retrofit.client.Header;
+import okhttp3.Headers;
 
 /**
  * Created by andrei on 3/21/16.
  *
  */
 public interface TelepatProxyResponse {
-    void onRequestFinished(String responseBody, List<Header> responseHeaders);
-    void onTelepatError(RetrofitError error);
+    void onRequestFinished(String responseBody, Headers responseHeaders);
+    void onTelepatError(Throwable error);
 }

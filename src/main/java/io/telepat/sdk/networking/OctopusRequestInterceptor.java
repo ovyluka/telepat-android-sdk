@@ -1,15 +1,19 @@
 package io.telepat.sdk.networking;
 
+import java.io.IOException;
+
 import io.telepat.sdk.Telepat;
 import io.telepat.sdk.utilities.TelepatConstants;
 import io.telepat.sdk.utilities.TelepatUtilities;
-import retrofit.RequestInterceptor;
+import okhttp3.Interceptor;
+import okhttp3.Request;
+import okhttp3.Response;
 
 /**
  * Created by Andrei Marinescu on 02.06.2015.
  * Retrofit RequestInterceptor implementation for adding required HTTP headers
  */
-public class OctopusRequestInterceptor implements RequestInterceptor{
+public class OctopusRequestInterceptor implements Interceptor {
     /**
      * The Telepat application ID
      */
@@ -55,18 +59,6 @@ public class OctopusRequestInterceptor implements RequestInterceptor{
 
     }
 
-    @Override
-    public void intercept(RequestFacade request) {
-        request.addHeader("Content-Type", "application/json");
-        if(apiKeyHash!=null) { request.addHeader("X-BLGREQ-SIGN", apiKeyHash); }
-        if(appId!=null) { request.addHeader("X-BLGREQ-APPID", appId); }
-        if(udid!=null) { request.addHeader("X-BLGREQ-UDID", udid); }
-        else { request.addHeader("X-BLGREQ-UDID",""); }
-        if(authorizationToken!=null) {
-            request.addHeader("Authorization","Bearer "+authorizationToken);
-        }
-    }
-
     public String getAppId() {
         return appId;
     }
@@ -97,5 +89,32 @@ public class OctopusRequestInterceptor implements RequestInterceptor{
 
     public void setAuthorizationToken(String authorizationToken) {
         this.authorizationToken = authorizationToken;
+    }
+
+    @Override
+    public Response intercept(Chain chain) throws IOException {
+        Request request;
+
+        Request.Builder builder = new Request.Builder();
+        builder.addHeader("Content-Type", "application/json");
+
+        if (apiKeyHash != null) {
+            builder.addHeader("X-BLGREQ-SIGN", apiKeyHash);
+        }
+        if (appId != null) {
+            builder.addHeader("X-BLGREQ-APPID", appId);
+        }
+        if (udid != null) {
+            builder.addHeader("X-BLGREQ-UDID", udid);
+        } else {
+            builder.addHeader("X-BLGREQ-UDID", "");
+        }
+        if (authorizationToken != null) {
+            builder.addHeader("Authorization", "Bearer " + authorizationToken);
+        }
+
+        request = builder.build();
+
+        return chain.proceed(request);
     }
 }

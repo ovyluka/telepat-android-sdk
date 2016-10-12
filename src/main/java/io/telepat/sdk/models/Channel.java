@@ -20,9 +20,9 @@ import io.telepat.sdk.networking.OctopusApi;
 import io.telepat.sdk.networking.responses.GenericApiResponse;
 import io.telepat.sdk.networking.responses.TelepatCountCallback;
 import io.telepat.sdk.utilities.TelepatLogger;
-import retrofit.Callback;
-import retrofit.RetrofitError;
-import retrofit.client.Response;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * Created by Andrei Marinescu, catalinivan on 09/03/15.
@@ -139,12 +139,10 @@ public class Channel implements PropertyChangeListener {
 				getSubscribingRequestBody(offset, limit, justInitialState),
 				new Callback<HashMap<String, JsonElement>>() {
 					@Override
-					public void success(
-							HashMap<String, JsonElement> responseHashMap,
-							Response response) {
+					public void onResponse(Call<HashMap<String, JsonElement>> call, Response<HashMap<String, JsonElement>> response) {
 
-						Integer status = Integer.parseInt(responseHashMap.get("status").toString());
-						JsonElement message = responseHashMap.get("content");
+						Integer status = Integer.parseInt(response.body().get("status").toString());
+						JsonElement message = response.body().get("content");
 
 						if (status == 200) {
 							Telepat.getInstance().registerSubscription(Channel.this);
@@ -165,23 +163,26 @@ public class Channel implements PropertyChangeListener {
 					}
 
 					@Override
-					public void failure(RetrofitError error) {
-						if (error!=null && error.getResponse()!=null && error.getResponse().getStatus()==409) {
-							TelepatLogger.log("There is an already active subscription for this channel.");
-							if (Channel.this.mChannelEventListener != null) {
-								mChannelEventListener.onSubscribeComplete();
-							}
-						} else if (error!=null && error.getResponse()!=null && error.getResponse().getStatus()==401) {
-							TelepatLogger.log("Not logged in.");
-						} else if(error!=null && error.getMessage()!=null){
-							TelepatLogger.log("Error subscribing: " + error.getMessage());
-						} else {
-							TelepatLogger.log("Error subscribing with unknown error");
-						}
-						if (mChannelEventListener != null) {
-							mChannelEventListener.onError(error.getResponse().getStatus(), error.getMessage());
-						}
+					public void onFailure(Call<HashMap<String, JsonElement>> call, Throwable t) {
+						// todo handle error
+
+//						if (error!=null && error.getResponse()!=null && error.getResponse().getStatus()==409) {
+//							TelepatLogger.log("There is an already active subscription for this channel.");
+//							if (Channel.this.mChannelEventListener != null) {
+//								mChannelEventListener.onSubscribeComplete();
+//							}
+//						} else if (error!=null && error.getResponse()!=null && error.getResponse().getStatus()==401) {
+//							TelepatLogger.log("Not logged in.");
+//						} else if(error!=null && error.getMessage()!=null){
+//							TelepatLogger.log("Error subscribing: " + error.getMessage());
+//						} else {
+//							TelepatLogger.log("Error subscribing with unknown error");
+//						}
+//						if (mChannelEventListener != null) {
+//							mChannelEventListener.onError(error.getResponse().getStatus(), error.getMessage());
+//						}
 					}
+
 				});
 	}
 
@@ -221,16 +222,19 @@ public class Channel implements PropertyChangeListener {
 				countRequestBody,
 				new Callback<GenericApiResponse>() {
 					@Override
-					public void success(GenericApiResponse genericApiResponse, Response response) {
-						int countValue = ((Double) genericApiResponse.content.get("count")).intValue();
-						Double aggregationValue = ((Double) genericApiResponse.content.get("aggregation"));
+					public void onResponse(Call<GenericApiResponse> call, Response<GenericApiResponse> response) {
+						int countValue = ((Double) response.body().content.get("count")).intValue();
+						Double aggregationValue = ((Double) response.body().content.get("aggregation"));
 						callback.onSuccess(countValue, aggregationValue);
 					}
 
 					@Override
-					public void failure(RetrofitError error) {
-						callback.onFailure(error);
+					public void onFailure(Call<GenericApiResponse> call, Throwable t) {
+						callback.onFailure(t);
 					}
+
+
+
 				});
 	}
 
@@ -326,16 +330,17 @@ public class Channel implements PropertyChangeListener {
 				.unsubscribe(getSubscribingRequestBody(),
 						new Callback<HashMap<String, String>>() {
 							@Override
-							public void success(HashMap<String, String> integerStringHashMap, Response response) {
+							public void onResponse(Call<HashMap<String, String>> call, Response<HashMap<String, String>> response) {
 								TelepatLogger.log("Unsubscribed");
 								dbInstance.
 										deleteChannelObjects(Channel.this.getSubscriptionIdentifier());
 							}
 
 							@Override
-							public void failure(RetrofitError error) {
-								TelepatLogger.log("Unsubscribe failed: " + error.getMessage());
+							public void onFailure(Call<HashMap<String, String>> call, Throwable t) {
+								TelepatLogger.log("Unsubscribe failed: " + t.getMessage());
 							}
+
 						});
 	}
 
