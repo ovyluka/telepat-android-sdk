@@ -51,6 +51,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
  * Telepat Main Orchestrator
  */
 public final class Telepat {
+
+    public static boolean isDebugMode = false;
+
     /**
      * Telepat singleton instance
      */
@@ -92,6 +95,7 @@ public final class Telepat {
      * Configured Telepat Application ID
      */
     private String appId;
+    public Retrofit retrofit;
 
     private Telepat() {
     }
@@ -183,11 +187,11 @@ public final class Telepat {
         okHttpClient.interceptors().add(requestInterceptor);
         okHttpClient.interceptors().add(loggingInterceptor);
 
-        Retrofit rBuilder = new Retrofit.Builder()
+         retrofit = new Retrofit.Builder()
                 .client(okHttpClient.build())
                 .addConverterFactory(GsonConverterFactory.create())
                 .baseUrl(telepatEndpoint).build();
-        apiClient = rBuilder.create(OctopusApi.class);
+        apiClient = retrofit.create(OctopusApi.class);
     }
 
     /**

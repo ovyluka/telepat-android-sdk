@@ -2,6 +2,7 @@ package io.telepat.sdk.models;
 
 import java.util.HashMap;
 
+import io.telepat.sdk.Telepat;
 import io.telepat.sdk.data.TelepatInternalDB;
 import io.telepat.sdk.networking.OctopusRequestInterceptor;
 import io.telepat.sdk.networking.responses.GenericApiResponse;
@@ -31,11 +32,18 @@ public class UserLoginCallback implements Callback<GenericApiResponse> {
 
 
     private void persistLoginData(HashMap<String, Object> loginData) {
+        String expiredToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6Im92aWRpdS5sdWNhQGFwcHNjZW5kLmNvbSIsImlkIjoiODM3ZmM5NWItOGRmNi00OWIzLWFjOWQtYWRiODgxNWI3MzE4IiwiaWF0IjoxNDc2MTExNTkxLCJleHAiOjE0NzYxMTUxOTF9.5uHdM3qXzYk-dD87rVoqvV92rweomRQce1AdnAY0Dr8";
         if(loginData.containsKey("token")) {
-            internalDB.setOperationsData(TelepatConstants.JWT_KEY, loginData.get("token"));
-//            internalDB.setOperationsData(TelepatConstants.JWT_TIMESTAMP_KEY, System.currentTimeMillis());
-            interceptor.setAuthorizationToken((String) loginData.get("token"));
+            if (!Telepat.getInstance().isDebugMode) {
+                internalDB.setOperationsData(TelepatConstants.JWT_KEY, loginData.get("token"));
+                interceptor.setAuthorizationToken((String) loginData.get("token"));
+            } else {
+                internalDB.setOperationsData(TelepatConstants.JWT_KEY, expiredToken);
+                interceptor.setAuthorizationToken(expiredToken);
+            }
         }
+
+        TelepatLogger.log("token::: " + interceptor.getAuthorizationToken());
 
         if(loginData.containsKey("user")) {
             internalDB.setOperationsData(TelepatConstants.CURRENT_USER_DATA, loginData.get("user"));
@@ -44,22 +52,23 @@ public class UserLoginCallback implements Callback<GenericApiResponse> {
 
     @Override
     public void onResponse(Call<GenericApiResponse> call, Response<GenericApiResponse> response) {
-        persistLoginData(response.body().content);
-        TelepatLogger.log("User logged in");
-        if(loginListener != null)
-            loginListener.onSuccess();
+        if (response.body().status == 200) {
+            persistLoginData(response.body().content);
+            TelepatLogger.log("User logged in");
+            if (loginListener != null)
+                loginListener.onSuccess();
+        } else if (response.body().status == 409) {
+            TelepatLogger.log("A facebook user with that fid already exists.");
+        } else {
+            TelepatLogger.log("User login failed.");
+        }
     }
 
     @Override
     public void onFailure(Call<GenericApiResponse> call, Throwable t) {
-        // TODO: 11/10/2016 parse error
-//        if(t!=null && error.getResponse()!=null && error.getResponse().getStatus()==409) {
-//            TelepatLogger.log("A facebook user with that fid already exists.");
-//        } else {
-//            TelepatLogger.log("User login failed.");
-//        }
-//        if(loginListener != null)
-//            loginListener.onError(error);
+        TelepatLogger.log("User login failed.");
+        if (loginListener != null)
+            loginListener.onError(t);
     }
 }
 
