@@ -38,10 +38,12 @@ import io.telepat.sdk.networking.transports.gcm.GcmRegistrar;
 import io.telepat.sdk.utilities.TelepatConstants;
 import io.telepat.sdk.utilities.TelepatLogger;
 import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * Created by Andrei Marinescu, catalinivan on 10/03/15.
@@ -174,11 +176,16 @@ public final class Telepat {
     private void initHTTPClient(String telepatEndpoint, String clientApiKey, final String clientAppId) {
         requestInterceptor = new OctopusRequestInterceptor(clientApiKey, clientAppId);
 
-        OkHttpClient okHttpClient = new OkHttpClient();
+        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+
+        OkHttpClient.Builder okHttpClient = new OkHttpClient.Builder();
         okHttpClient.interceptors().add(requestInterceptor);
+        okHttpClient.interceptors().add(loggingInterceptor);
 
         Retrofit rBuilder = new Retrofit.Builder()
-                .client(okHttpClient)
+                .client(okHttpClient.build())
+                .addConverterFactory(GsonConverterFactory.create())
                 .baseUrl(telepatEndpoint).build();
         apiClient = rBuilder.create(OctopusApi.class);
     }
@@ -203,7 +210,8 @@ public final class Telepat {
 
         if (udid.isEmpty() || shouldUpdateBackend) {
             RegisterDeviceRequest request = new RegisterDeviceRequest(regId);
-            apiClient.registerDevice(request.getParams(), new Callback<GenericApiResponse>() {
+            Call<GenericApiResponse> call = apiClient.registerDevice(request.getParams());
+            call.enqueue(new Callback<GenericApiResponse>() {
                 @Override
                 public void onResponse(Call<GenericApiResponse> call, Response<GenericApiResponse> response) {
                     TelepatLogger.log("Register device success");
@@ -222,8 +230,6 @@ public final class Telepat {
                 public void onFailure(Call<GenericApiResponse> call, Throwable t) {
                     TelepatLogger.log("Register device failure.");
                 }
-
-
             });
         } //else {
         //TODO send update
@@ -234,13 +240,15 @@ public final class Telepat {
      * Retrieve the currently active contexts for the current Telepat application
      */
     private void requestContexts() {
-        apiClient.updateContexts(new Callback<ContextsApiResponse>() {
+        final Call<ContextsApiResponse> callUpdateContexts = apiClient.updateContexts();
+        callUpdateContexts.enqueue(new Callback<ContextsApiResponse>() {
             @Override
             public void onResponse(Call<ContextsApiResponse> call, Response<ContextsApiResponse> response) {
                 if (response.body().status == 200) {
                     updateContexts(response.body());
                 } else if (response.body().status == 404) {
-                    apiClient.updateContextsCompat(new Callback<ContextsApiResponse>() {
+                    Call<ContextsApiResponse> callcallUpdateContextsCompat = apiClient.updateContextsCompat();
+                    callcallUpdateContextsCompat.enqueue(new Callback<ContextsApiResponse>() {
                         @Override
                         public void onResponse(Call<ContextsApiResponse> call, Response<ContextsApiResponse> response) {
                             updateContexts(response.body());
@@ -254,7 +262,6 @@ public final class Telepat {
                 } else {
                     TelepatLogger.log("Failed to get contexts");
                 }
-
             }
 
             @Override
@@ -295,22 +302,18 @@ public final class Telepat {
     @SuppressWarnings("unused")
     public void registerFacebookUser(final String fbToken, final TelepatRequestListener loginListener) {
         internalDB.setOperationsData(TelepatConstants.FB_TOKEN_KEY, fbToken);
-        apiClient.registerUserFacebook(new RegisterFacebookUserRequest(fbToken).getParams(), new Callback<Map<String, String>>() {
+
+        Call<Map<String, String>> registerUserFacebookCall = apiClient.registerUserFacebook(new RegisterFacebookUserRequest(fbToken).getParams());
+        registerUserFacebookCall.enqueue(new Callback<Map<String, String>>() {
             @Override
             public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
+                Call<GenericApiResponse> loginFacebookCall = apiClient.loginFacebook(new RegisterFacebookUserRequest(fbToken).getParams());
                 if (response.code() == 200) {
-                    apiClient.loginFacebook(
-                            new RegisterFacebookUserRequest(fbToken).getParams(),
-                            new UserLoginCallback(requestInterceptor, internalDB, loginListener)
-                    );
+                    loginFacebookCall.enqueue(new UserLoginCallback(requestInterceptor, internalDB, loginListener));
                 } else if (response.code() == 409) {
-                    apiClient.loginFacebook(
-                            new RegisterFacebookUserRequest(fbToken).getParams(),
-                            new UserLoginCallback(requestInterceptor, internalDB, loginListener)
-                    );
+                    loginFacebookCall.enqueue(new UserLoginCallback(requestInterceptor, internalDB, loginListener));
                 } else {
                     TelepatLogger.error("user register failed");
-
                 }
             }
 
@@ -319,7 +322,6 @@ public final class Telepat {
                 loginListener.onError(t);
                 t.printStackTrace();
             }
-
         });
     }
 
@@ -330,20 +332,17 @@ public final class Telepat {
     public void registerTwitterUser(final String oauthToken, final String oauthTokenSecret, final TelepatRequestListener loginListener) {
         internalDB.setOperationsData(TelepatConstants.TWITTER_TOKEN_KEY, oauthToken);
         internalDB.setOperationsData(TelepatConstants.TWITTER_SECRET_TOKEN_KEY, oauthTokenSecret);
-        apiClient.registerUserTwitter(new RegisterTwitterUserRequest(oauthToken, oauthTokenSecret).getParams(), new Callback<Map<String, String>>() {
+
+        Call<Map<String, String>> registerUserTwitterCall = apiClient.registerUserTwitter(new RegisterTwitterUserRequest(oauthToken, oauthTokenSecret).getParams());
+        registerUserTwitterCall.enqueue(new Callback<Map<String, String>>() {
             @Override
             public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
+                Call<GenericApiResponse> loginTwitterCall = apiClient.loginTwitter(new RegisterTwitterUserRequest(oauthToken, oauthTokenSecret).getParams());
                 if (response.code() == 200) {
                     TelepatLogger.log("User registered");
-                    apiClient.loginTwitter(
-                            new RegisterTwitterUserRequest(oauthToken, oauthTokenSecret).getParams(),
-                            new UserLoginCallback(requestInterceptor, internalDB, loginListener)
-                    );
+                    loginTwitterCall.enqueue(new UserLoginCallback(requestInterceptor, internalDB, loginListener));
                 } else if (response.code() == 409) {
-                    apiClient.loginTwitter(
-                            new RegisterTwitterUserRequest(oauthToken, oauthTokenSecret).getParams(),
-                            new UserLoginCallback(requestInterceptor, internalDB, loginListener)
-                    );
+                    loginTwitterCall.enqueue(new UserLoginCallback(requestInterceptor, internalDB, loginListener));
                 } else {
                     TelepatLogger.error("User register failed");
                 }
@@ -354,7 +353,6 @@ public final class Telepat {
                 TelepatLogger.error("User register failed");
                 t.printStackTrace();
             }
-
         });
     }
 
@@ -384,7 +382,8 @@ public final class Telepat {
                 userHash.put("callbackUrl", callbackUrl);
             }
 
-            apiClient.registerUserEmailPass(userHash, new Callback<Map<String, String>>() {
+            Call<Map<String, String>> registerUserEmailPassCall = apiClient.registerUserEmailPass(userHash);
+            registerUserEmailPassCall.enqueue(new Callback<Map<String, String>>() {
                 @Override
                 public void onResponse(Call<Map<String, String>> call, Response<Map<String, String>> response) {
                     listener.onUserCreateSuccess();
@@ -395,7 +394,6 @@ public final class Telepat {
                 public void onFailure(Call<Map<String, String>> call, Throwable t) {
                     listener.onUserCreateFailure(t);
                 }
-
             });
         }
     }
@@ -417,13 +415,16 @@ public final class Telepat {
      * @param requestListener a listener for the result state of the operation
      */
     public void refreshToken(final TelepatRequestListener requestListener) {
-        apiClient.refreshToken(
-                new UserLoginCallback(
-                        requestInterceptor,
-                        internalDB,
-                        requestListener
-                )
-        );
+//        apiClient.refreshToken(
+//                new UserLoginCallback(
+//                        requestInterceptor,
+//                        internalDB,
+//                        requestListener
+//                )
+//        );
+
+        Call<GenericApiResponse> call = apiClient.refreshToken();
+        call.enqueue(new UserLoginCallback(requestInterceptor, internalDB, requestListener));
     }
 
     @SuppressWarnings("unused")
@@ -434,19 +435,14 @@ public final class Telepat {
             HashMap<String, String> userHash = new HashMap<>();
             userHash.put("username", email);
             userHash.put("password", password);
-            apiClient.loginEmailAndPassword(
-                    userHash,
-                    new UserLoginCallback(requestInterceptor, internalDB, listener)
-            );
+            Call<GenericApiResponse> call = apiClient.loginEmailAndPassword(userHash);
+            call.enqueue(new UserLoginCallback(requestInterceptor, internalDB, listener));
         }
     }
 
     @SuppressWarnings("unused")
     public void loginWithFacebook(final String fbToken, final String existingUsername, final TelepatRequestListener loginListener) {
-        apiClient.loginFacebook(
-                new RegisterFacebookUserRequest(fbToken, existingUsername).getParams(),
-                new UserLoginCallback(requestInterceptor, internalDB, loginListener)
-        );
+        apiClient.loginFacebook(new RegisterFacebookUserRequest(fbToken, existingUsername).getParams()).enqueue(new UserLoginCallback(requestInterceptor, internalDB, loginListener));
     }
 
     @SuppressWarnings("unused")
@@ -458,9 +454,7 @@ public final class Telepat {
     public void loginWithTwitter(final String oauthToken,
                                  final String oauthTokenSecret,
                                  final TelepatRequestListener loginListener) {
-        apiClient.loginTwitter(
-                new RegisterTwitterUserRequest(oauthToken, oauthTokenSecret).getParams(),
-                new UserLoginCallback(requestInterceptor, internalDB, loginListener));
+        apiClient.loginTwitter(new RegisterTwitterUserRequest(oauthToken, oauthTokenSecret).getParams()).enqueue(new UserLoginCallback(requestInterceptor, internalDB, loginListener));
     }
 
     /**
@@ -468,7 +462,7 @@ public final class Telepat {
      */
     @SuppressWarnings("unused")
     public void logout() {
-        apiClient.logout(new Callback<HashMap<String, Object>>() {
+        apiClient.logout().enqueue(new Callback<HashMap<String, Object>>() {
             @Override
             public void onResponse(Call<HashMap<String, Object>> call, Response<HashMap<String, Object>> response) {
                 TelepatLogger.log("Logout successful");
@@ -480,8 +474,6 @@ public final class Telepat {
             public void onFailure(Call<HashMap<String, Object>> call, Throwable t) {
                 TelepatLogger.error("user logout failed - " + t.getMessage());
             }
-
-
         });
     }
 
@@ -515,7 +507,7 @@ public final class Telepat {
             requestBody.put("callbackUrl", callbackUrl);
         }
 
-        apiClient.requestPasswordReset(requestBody, new Callback<HashMap<String, String>>() {
+        apiClient.requestPasswordReset(requestBody).enqueue(new Callback<HashMap<String, String>>() {
             @Override
             public void onResponse(Call<HashMap<String, String>> call, Response<HashMap<String, String>> response) {
                 TelepatLogger.log("Reset email sent");
@@ -529,7 +521,6 @@ public final class Telepat {
                 TelepatLogger.log("Reset request failed");
                 listener.onError(t);
             }
-
         });
     }
 
@@ -552,7 +543,8 @@ public final class Telepat {
         requestBody.put("user_id", userId);
         requestBody.put("token", token);
         requestBody.put("password", newPassword);
-        apiClient.resetPassword(requestBody, new Callback<HashMap<String, String>>() {
+
+        apiClient.resetPassword(requestBody).enqueue(new Callback<HashMap<String, String>>() {
             @Override
             public void onResponse(Call<HashMap<String, String>> call, Response<HashMap<String, String>> response) {
                 TelepatLogger.log("Password was reset");
@@ -565,14 +557,12 @@ public final class Telepat {
                 TelepatLogger.log("Password reset failed");
                 listener.onError(t);
             }
-
-
         });
     }
 
     @SuppressWarnings("unused")
     public void getUserMetadata(Callback<GenericApiResponse> callback) {
-        apiClient.getUserMetadata(callback);
+        apiClient.getUserMetadata().enqueue(callback);
     }
 
     @SuppressWarnings("unused")
@@ -587,7 +577,7 @@ public final class Telepat {
             jsonPatches.add(jsonPatch);
         }
         requestBody.put("patches", jsonPatches);
-        apiClient.updateUserMetadata(requestBody, new Callback<HashMap<String, Object>>() {
+        apiClient.updateUserMetadata(requestBody).enqueue(new Callback<HashMap<String, Object>>() {
             @Override
             public void onResponse(Call<HashMap<String, Object>> call, Response<HashMap<String, Object>> response) {
                 listener.onSuccess();
@@ -598,7 +588,6 @@ public final class Telepat {
             public void onFailure(Call<HashMap<String, Object>> call, Throwable t) {
                 listener.onError(t);
             }
-
         });
     }
 
@@ -800,7 +789,7 @@ public final class Telepat {
             jsonPatches.add(jsonPatch);
         }
         requestBody.put("patches", jsonPatches);
-        apiClient.updateUser(requestBody, new Callback<HashMap<String, String>>() {
+        apiClient.updateUser(requestBody).enqueue(new Callback<HashMap<String, String>>() {
             @Override
             public void onResponse(Call<HashMap<String, String>> call, Response<HashMap<String, String>> response) {
                 TelepatLogger.log("User update successful");
@@ -821,7 +810,6 @@ public final class Telepat {
                 TelepatLogger.log("User update failed");
                 listener.onError(t);
             }
-
         });
     }
 
@@ -881,7 +869,7 @@ public final class Telepat {
 
     @SuppressWarnings("unused")
     public void sendProxiedRequest(TelepatProxyRequest request, final TelepatProxyResponse callback) {
-        apiClient.proxy(request, new Callback<Response>() {
+        apiClient.proxy(request).enqueue(new Callback<Response>() {
             @Override
             public void onResponse(Call<Response> call, Response<Response> response) {
                 //Try to get response body
@@ -917,8 +905,6 @@ public final class Telepat {
                     callback.onTelepatError(t);
                 }
             }
-
-
         });
     }
 
@@ -939,17 +925,17 @@ public final class Telepat {
             requestBody.put("subject", subject);
         }
         requestBody.put("body", body);
-        apiClient.sendEmail(requestBody, callback);
+        apiClient.sendEmail(requestBody).enqueue(callback);
     }
 
     @SuppressWarnings("unused")
     public void me(Callback<GenericApiResponse> callback) {
-        getAPIInstance().me(callback);
+        getAPIInstance().me().enqueue(callback);
     }
 
     @SuppressWarnings("unused")
     public void get(String userId, Callback<GenericApiResponse> callback) {
-        getAPIInstance().get(userId, callback);
+        getAPIInstance().get(userId).enqueue(callback);
     }
 
     public String getAppId() {
@@ -962,7 +948,7 @@ public final class Telepat {
         appendRequestBody.put("listName", listName);
         appendRequestBody.put("indexedProperty", indexedPropertyName);
         appendRequestBody.put("memberObject", objectToIndex);
-        getAPIInstance().appendToIndexedList(appendRequestBody, callback);
+        getAPIInstance().appendToIndexedList(appendRequestBody).enqueue(callback);
     }
 
     @SuppressWarnings("unused")
@@ -971,14 +957,14 @@ public final class Telepat {
         requestBody.put("listName", listName);
         requestBody.put("indexedProperty", indexedPropertyName);
         requestBody.put("members", memberPropertyValues);
-        getAPIInstance().checkIndexedListMembers(requestBody, callback);
+        getAPIInstance().checkIndexedListMembers(requestBody).enqueue(callback);
     }
 
     @SuppressWarnings("unused")
     public void deleteIndexedList(String listName, Callback<GenericApiResponse> callback) {
         HashMap<String, String> requestBody = new HashMap<>();
         requestBody.put("listName", listName);
-        getAPIInstance().deleteIndexedList(requestBody, callback);
+        getAPIInstance().deleteIndexedList(requestBody).enqueue(callback);
     }
 
     @SuppressWarnings("unused")
@@ -987,6 +973,6 @@ public final class Telepat {
         requestBody.put("listName", listName);
         requestBody.put("indexedProperty", indexedPropertyName);
         requestBody.put("member", memberPropertyValue);
-        getAPIInstance().removeFromIndexedList(requestBody, callback);
+        getAPIInstance().removeFromIndexedList(requestBody).enqueue(callback);
     }
 }

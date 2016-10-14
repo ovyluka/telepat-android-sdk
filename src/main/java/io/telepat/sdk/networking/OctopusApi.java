@@ -8,7 +8,7 @@ import java.util.Map;
 import io.telepat.sdk.models.TelepatProxyRequest;
 import io.telepat.sdk.networking.responses.ContextsApiResponse;
 import io.telepat.sdk.networking.responses.GenericApiResponse;
-import retrofit2.Callback;
+import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -24,173 +24,158 @@ public interface OctopusApi {
     /**
      * Method for sending a device registration request
      * @param body
-     * @param cb
+     * @return call
      */
     @POST("/device/register")
-    void registerDevice(@Body Map<String, Object> body, Callback<GenericApiResponse> cb);
+    Call<GenericApiResponse> registerDevice(@Body Map<String, Object> body);
 
     /**
      * Method for retrieving all active contexts
-     * @param cb
+     * @return call
      */
     @POST("/context/all")
-    void updateContexts(Callback<ContextsApiResponse> cb);
+    Call<ContextsApiResponse> updateContexts();
 
     @Deprecated
     @GET("/context/all")
-    void updateContextsCompat(Callback<ContextsApiResponse> cb);
+    Call<ContextsApiResponse> updateContextsCompat();
 
     /**
      * Method for sending a register request using the Facebook auth provider
      * @param body
-     * @param cb
      */
     @POST("/user/register-facebook")
-    void registerUserFacebook(@Body Map<String, String> body, Callback<Map<String, String>> cb);
+    Call<Map<String, String>> registerUserFacebook(@Body Map<String, String> body);
 
     /**
      * Method for sending a register request using the Email/Password auth provider
      * @param body
-     * @param cb
      */
     @POST("/user/register-username")
-    void registerUserEmailPass(@Body Map<String, String> body, Callback<Map<String, String>> cb);
+    Call<Map<String, String>> registerUserEmailPass(@Body Map<String, String> body);
 
     /**
      * Method for sending a register request using the Twitter auth provider
      * @param body
-     * @param cb
      */
     @POST("/user/register-twitter")
-    void registerUserTwitter(@Body Map<String, String> body, Callback<Map<String, String>> cb);
+    Call<Map<String, String>> registerUserTwitter(@Body Map<String, String> body);
 
     /**
      * Refresh the current JWT token
-     * @param cb
      */
     @GET("/user/refresh_token")
-    void refreshToken(Callback<GenericApiResponse> cb);
+    Call<GenericApiResponse> refreshToken();
 
     /**
      * Method for sending a login request using the Facebook auth provider
      * @param body
-     * @param cb
      */
     @POST("/user/login-facebook")
-    void loginFacebook(@Body Map<String, String> body, Callback<GenericApiResponse> cb);
+    Call<GenericApiResponse> loginFacebook(@Body Map<String, String> body);
 
     /**
      * Method for sending a login request using the Twitter auth provider
      * @param body
-     * @param cb
      */
     @POST("/user/login-twitter")
-    void loginTwitter(@Body Map<String, String> body, Callback<GenericApiResponse> cb);
+    Call<GenericApiResponse> loginTwitter(@Body Map<String, String> body);
 
     /**
      * Method for sending a login request using the Email/Password auth provider
      * @param body
-     * @param cb
      */
     @POST("/user/login_password")
-    void loginEmailAndPassword(@Body Map<String, String> body, Callback<GenericApiResponse> cb);
+    Call<GenericApiResponse> loginEmailAndPassword(@Body Map<String, String> body);
 
     /**
      * Method for sending a logout request
-     * @param cb
      */
     @GET("/user/logout")
-    void logout(Callback<HashMap<String,Object>> cb);
+    Call<HashMap<String, Object>> logout();
 
     /**
      * Method for requesting a password reset email
      * @param body
-     * @param cb
      */
     @POST("/user/request_password_reset")
-    void requestPasswordReset(@Body Map<String, String> body, Callback<HashMap<String, String>> cb);
+    Call<HashMap<String, String>> requestPasswordReset(@Body Map<String, String> body);
 
     /**
      * Method for changing a user authentication password
      * @param body
-     * @param cb
      */
     @POST("/user/password_reset")
-    void resetPassword(@Body Map<String, String> body, Callback<HashMap<String, String>> cb);
+    Call<HashMap<String, String>> resetPassword(@Body Map<String, String> body);
 
     @POST("/user/update")
-    void updateUser(@Body Map<String, Object> body, Callback<HashMap<String, String>> cb);
+    Call<HashMap<String, String>> updateUser(@Body Map<String, Object> body);
 
     @GET("/user/metadata")
-    void getUserMetadata(Callback<GenericApiResponse> cb);
+    Call<GenericApiResponse> getUserMetadata();
 
     @POST("/user/update_metadata")
-    void updateUserMetadata(@Body Map<String, Object> body, Callback<HashMap<String, Object>> cb);
+    Call<HashMap<String, Object>> updateUserMetadata(@Body Map<String, Object> body);
 
     /**
      * Method for sending a subscribe request
      * @param body
-     * @param cb
      */
     @POST("/object/subscribe")
-    void subscribe(@Body Map<String, Object> body, Callback<HashMap<String, JsonElement>> cb);
+    Call<HashMap<String, JsonElement>> subscribe(@Body Map<String, Object> body);
 
     @POST("/object/count")
-    void count(@Body Map<String, Object> body, Callback<GenericApiResponse> cb);
+    Call<GenericApiResponse> count(@Body Map<String, Object> body);
 
     /**
      * Method for sending an unsubscribe request
      * @param body
-     * @param cb
      */
     @POST("/object/unsubscribe")
-    void unsubscribe(@Body Map<String, Object> body, Callback<HashMap<String, String>> cb);
+    Call<HashMap<String, String>> unsubscribe(@Body Map<String, Object> body);
 
     /**
      * Method for sending an object creation request
      * @param body
-     * @param cb
      */
     @POST("/object/create")
-    void create(@Body Map<String, Object> body, Callback<HashMap<String, String>> cb);
+    Call<HashMap<String, String>> create(@Body Map<String, Object> body);
 
     /**
      * Method for sending an object update request
      * @param body
-     * @param cb
      */
     @POST("/object/update")
-    void update(@Body Map<String, Object> body, Callback<HashMap<String, String>> cb);
+    Call<HashMap<String, String>> update(@Body Map<String, Object> body);
 
     /**
      * Method for sending an object delete request
      * @param body
-     * @param cb
      */
     @POST("/object/delete")
-    void delete(@Body Map<String, Object> body, Callback<HashMap<String, String>> cb);
+    Call<HashMap<String, String>> delete(@Body Map<String, Object> body);
 
     @POST("/proxy")
-    void proxy(@Body TelepatProxyRequest request, Callback<Response> cb);
+    Call<Response> proxy(@Body TelepatProxyRequest request);
 
     @GET("/user/me")
-    void me(Callback<GenericApiResponse> cb);
+    Call<GenericApiResponse> me();
 
     @GET("/user/get")
-    void get(@Query("user_id") String userId, Callback<GenericApiResponse> cb);
+    Call<GenericApiResponse> get(@Query("user_id") String userId);
 
     @POST("/email")
-    void sendEmail(@Body Map<String, Object> body, Callback<GenericApiResponse> cb);
+    Call<GenericApiResponse> sendEmail(@Body Map<String, Object> body);
 
     @POST("/til/append")
-    void appendToIndexedList(@Body Map<String, Object> body, Callback<GenericApiResponse> cb);
+    Call<GenericApiResponse> appendToIndexedList(@Body Map<String, Object> body);
 
     @POST("/til/get")
-    void checkIndexedListMembers(@Body Map<String, Object> body, Callback<GenericApiResponse> cb);
+    Call<GenericApiResponse> checkIndexedListMembers(@Body Map<String, Object> body);
 
     @POST("/til/removeList")
-    void deleteIndexedList(@Body Map<String, String> body, Callback<GenericApiResponse> cb);
+    Call<GenericApiResponse> deleteIndexedList(@Body Map<String, String> body);
 
     @POST("/til/removeMember")
-    void removeFromIndexedList(@Body Map<String, String> body, Callback<GenericApiResponse> cb);
+    Call<GenericApiResponse> removeFromIndexedList(@Body Map<String, String> body);
 }

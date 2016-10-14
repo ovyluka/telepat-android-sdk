@@ -93,9 +93,9 @@ public class OctopusRequestInterceptor implements Interceptor {
 
     @Override
     public Response intercept(Chain chain) throws IOException {
-        Request request;
+        Request request = chain.request();
 
-        Request.Builder builder = new Request.Builder();
+        Request.Builder builder = request.newBuilder();
         builder.addHeader("Content-Type", "application/json");
 
         if (apiKeyHash != null) {
@@ -116,5 +116,7 @@ public class OctopusRequestInterceptor implements Interceptor {
         request = builder.build();
 
         return chain.proceed(request);
+
+
     }
 }
