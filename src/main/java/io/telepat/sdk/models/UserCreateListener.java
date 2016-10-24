@@ -5,5 +5,5 @@ package io.telepat.sdk.models;
  */
 public interface UserCreateListener {
     public void onUserCreateSuccess();
-    public void onUserCreateFailure(Throwable error);
+    public void onUserCreateFailure(String error);
 }

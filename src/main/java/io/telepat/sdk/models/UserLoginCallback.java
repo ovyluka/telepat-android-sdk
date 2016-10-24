@@ -5,6 +5,7 @@ import java.util.HashMap;
 import io.telepat.sdk.Telepat;
 import io.telepat.sdk.data.TelepatInternalDB;
 import io.telepat.sdk.networking.OctopusRequestInterceptor;
+import io.telepat.sdk.networking.responses.ApiError;
 import io.telepat.sdk.networking.responses.GenericApiResponse;
 import io.telepat.sdk.utilities.TelepatConstants;
 import io.telepat.sdk.utilities.TelepatLogger;
@@ -52,23 +53,28 @@ public class UserLoginCallback implements Callback<GenericApiResponse> {
 
     @Override
     public void onResponse(Call<GenericApiResponse> call, Response<GenericApiResponse> response) {
-        if (response.body().status == 200) {
+        if (response.isSuccessful()) {
             persistLoginData(response.body().content);
             TelepatLogger.log("User logged in");
             if (loginListener != null)
                 loginListener.onSuccess();
-        } else if (response.body().status == 409) {
-            TelepatLogger.log("A facebook user with that fid already exists.");
         } else {
-            TelepatLogger.log("User login failed.");
+            ApiError apiError = ApiError.parseError(response);
+            if (apiError.status() == 409) {
+                TelepatLogger.log("A facebook user with that fid already exists.");
+            } else {
+                TelepatLogger.log("User login failed.");
+            }
+
+            if (loginListener != null)
+                loginListener.onError(apiError.message());
         }
     }
 
     @Override
     public void onFailure(Call<GenericApiResponse> call, Throwable t) {
-        TelepatLogger.log("User login failed.");
-        if (loginListener != null)
-            loginListener.onError(t);
+        TelepatLogger.log("User login failed. " + t.getMessage());
+
     }
 }
 

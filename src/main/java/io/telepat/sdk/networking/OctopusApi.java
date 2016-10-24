@@ -45,21 +45,21 @@ public interface OctopusApi {
      * @param body
      */
     @POST("/user/register-facebook")
-    Call<Map<String, String>> registerUserFacebook(@Body Map<String, String> body);
+    Call<GenericApiResponse> registerUserFacebook(@Body Map<String, String> body);
 
     /**
      * Method for sending a register request using the Email/Password auth provider
      * @param body
      */
     @POST("/user/register-username")
-    Call<Map<String, String>> registerUserEmailPass(@Body Map<String, String> body);
+    Call<GenericApiResponse> registerUserEmailPass(@Body Map<String, String> body);
 
     /**
      * Method for sending a register request using the Twitter auth provider
      * @param body
      */
     @POST("/user/register-twitter")
-    Call<Map<String, String>> registerUserTwitter(@Body Map<String, String> body);
+    Call<GenericApiResponse> registerUserTwitter(@Body Map<String, String> body);
 
     /**
      * Refresh the current JWT token
@@ -92,37 +92,37 @@ public interface OctopusApi {
      * Method for sending a logout request
      */
     @GET("/user/logout")
-    Call<HashMap<String, Object>> logout();
+    Call<GenericApiResponse> logout();
 
     /**
      * Method for requesting a password reset email
      * @param body
      */
     @POST("/user/request_password_reset")
-    Call<HashMap<String, String>> requestPasswordReset(@Body Map<String, String> body);
+    Call<GenericApiResponse> requestPasswordReset(@Body Map<String, String> body);
 
     /**
      * Method for changing a user authentication password
      * @param body
      */
     @POST("/user/password_reset")
-    Call<HashMap<String, String>> resetPassword(@Body Map<String, String> body);
+    Call<GenericApiResponse> resetPassword(@Body Map<String, String> body);
 
     @POST("/user/update")
-    Call<HashMap<String, String>> updateUser(@Body Map<String, Object> body);
+    Call<GenericApiResponse> updateUser(@Body Map<String, Object> body);
 
     @GET("/user/metadata")
     Call<GenericApiResponse> getUserMetadata();
 
     @POST("/user/update_metadata")
-    Call<HashMap<String, Object>> updateUserMetadata(@Body Map<String, Object> body);
+    Call<GenericApiResponse> updateUserMetadata(@Body Map<String, Object> body);
 
     /**
      * Method for sending a subscribe request
      * @param body
      */
     @POST("/object/subscribe")
-    Call<HashMap<String, JsonElement>> subscribe(@Body Map<String, Object> body);
+    Call<GenericApiResponse> subscribe(@Body Map<String, Object> body);
 
     @POST("/object/count")
     Call<GenericApiResponse> count(@Body Map<String, Object> body);
@@ -132,28 +132,28 @@ public interface OctopusApi {
      * @param body
      */
     @POST("/object/unsubscribe")
-    Call<HashMap<String, String>> unsubscribe(@Body Map<String, Object> body);
+    Call<GenericApiResponse> unsubscribe(@Body Map<String, Object> body);
 
     /**
      * Method for sending an object creation request
      * @param body
      */
     @POST("/object/create")
-    Call<HashMap<String, String>> create(@Body Map<String, Object> body);
+    Call<GenericApiResponse> create(@Body Map<String, Object> body);
 
     /**
      * Method for sending an object update request
      * @param body
      */
     @POST("/object/update")
-    Call<HashMap<String, String>> update(@Body Map<String, Object> body);
+    Call<GenericApiResponse> update(@Body Map<String, Object> body);
 
     /**
      * Method for sending an object delete request
      * @param body
      */
     @POST("/object/delete")
-    Call<HashMap<String, String>> delete(@Body Map<String, Object> body);
+    Call<GenericApiResponse> delete(@Body Map<String, Object> body);
 
     @POST("/proxy")
     Call<Response> proxy(@Body TelepatProxyRequest request);

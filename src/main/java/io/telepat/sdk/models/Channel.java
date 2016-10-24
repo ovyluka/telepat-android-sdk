@@ -17,6 +17,7 @@ import io.telepat.sdk.Telepat;
 import io.telepat.sdk.data.TelepatInternalDB;
 import io.telepat.sdk.networking.CrudOperationsCallback;
 import io.telepat.sdk.networking.OctopusApi;
+import io.telepat.sdk.networking.responses.ApiError;
 import io.telepat.sdk.networking.responses.GenericApiResponse;
 import io.telepat.sdk.networking.responses.TelepatCountCallback;
 import io.telepat.sdk.utilities.TelepatLogger;
@@ -135,58 +136,50 @@ public class Channel implements PropertyChangeListener {
 	 * If the device is already registered, the stored objects will be notified again.
 	 */
 	private void doSubscribe(int offset, int limit, boolean justInitialState) {
-
-
-		apiInstance.subscribe(getSubscribingRequestBody(offset, limit, justInitialState)).enqueue(new Callback<HashMap<String, JsonElement>>() {
+		apiInstance.subscribe(getSubscribingRequestBody(offset,limit,justInitialState)).enqueue(new Callback<GenericApiResponse>() {
 			@Override
-			public void onResponse(Call<HashMap<String, JsonElement>> call, Response<HashMap<String, JsonElement>> response) {
-				Integer status = Integer.parseInt(response.body().get("status").toString());
-				JsonElement message = response.body().get("content");
+			public void onResponse(Call<GenericApiResponse> call, Response<GenericApiResponse> response) {
+				if(response.isSuccessful()){
+					Integer status = response.body().status;
+					JsonElement message = (JsonElement) response.body().content.get("content");
+					if (status == 200) {
+						Telepat.getInstance().registerSubscription(Channel.this);
 
-				if (status == 200) {
-					Telepat.getInstance().registerSubscription(Channel.this);
+						for (JsonElement entry
+								: message.getAsJsonArray()) {
+							processNotification(new TransportNotification(entry));
+						}
 
-					for (JsonElement entry
-							: message.getAsJsonArray()) {
-						processNotification(new TransportNotification(entry));
+						if (Channel.this.mChannelEventListener != null) {
+							mChannelEventListener.onSubscribeComplete();
+						}
+
+					}else{
+						if (Channel.this.mChannelEventListener != null)
+							Channel.this.mChannelEventListener.onError(status, message.toString());
+					}
+				}else{
+					ApiError apiError = ApiError.parseError(response);
+					if(apiError.status() == 409){
+						TelepatLogger.log("There is an already active subscription for this channel.");
+						if (Channel.this.mChannelEventListener != null) {
+							mChannelEventListener.onSubscribeComplete();
+						}
+					}else if (apiError.status() == 401){
+						TelepatLogger.log("Not logged in.");
+					}else {
+						TelepatLogger.log("Error subscribing: " + apiError.message());
 					}
 
-					if (Channel.this.mChannelEventListener != null) {
-						mChannelEventListener.onSubscribeComplete();
+					if (mChannelEventListener != null) {
+						mChannelEventListener.onError(apiError.status(), apiError.message());
 					}
-
-				} else if (status == 409) {
-					TelepatLogger.log("There is an already active subscription for this channel.");
-					if (Channel.this.mChannelEventListener != null) {
-						mChannelEventListener.onSubscribeComplete();
-					}
-				} else if (status == 401) {
-					TelepatLogger.log("Not logged in.");
-				} else {
-					if (Channel.this.mChannelEventListener != null)
-						Channel.this.mChannelEventListener.onError(status, message.toString());
 				}
 			}
 
 			@Override
-			public void onFailure(Call<HashMap<String, JsonElement>> call, Throwable t) {
-				// todo handle error
-				t.printStackTrace();
-//						if (error!=null && error.getResponse()!=null && error.getResponse().getStatus()==409) {
-//							TelepatLogger.log("There is an already active subscription for this channel.");
-//							if (Channel.this.mChannelEventListener != null) {
-//								mChannelEventListener.onSubscribeComplete();
-//							}
-//						} else if (error!=null && error.getResponse()!=null && error.getResponse().getStatus()==401) {
-//							TelepatLogger.log("Not logged in.");
-//						} else if(error!=null && error.getMessage()!=null){
-//							TelepatLogger.log("Error subscribing: " + error.getMessage());
-//						} else {
-//							TelepatLogger.log("Error subscribing with unknown error");
-//						}
-//						if (mChannelEventListener != null) {
-//							mChannelEventListener.onError(error.getResponse().getStatus(), t.getMessage());
-//						}
+			public void onFailure(Call<GenericApiResponse> call, Throwable t) {
+				TelepatLogger.error(t.getMessage());
 			}
 		});
 	}
@@ -227,15 +220,19 @@ public class Channel implements PropertyChangeListener {
 		apiInstance.count(countRequestBody).enqueue(new Callback<GenericApiResponse>() {
 			@Override
 			public void onResponse(Call<GenericApiResponse> call, Response<GenericApiResponse> response) {
-				int countValue = ((Double) response.body().content.get("count")).intValue();
-				Double aggregationValue = ((Double) response.body().content.get("aggregation"));
-				callback.onSuccess(countValue, aggregationValue);
+				if(response.isSuccessful()) {
+					int countValue = ((Double) response.body().content.get("count")).intValue();
+					Double aggregationValue = ((Double) response.body().content.get("aggregation"));
+					callback.onSuccess(countValue, aggregationValue);
+				}else{
+					callback.onFailure(ApiError.parseError(response).message());
+				}
 
 			}
 
 			@Override
 			public void onFailure(Call<GenericApiResponse> call, Throwable t) {
-				callback.onFailure(t);
+				TelepatLogger.error(t.getMessage());
 			}
 		});
 	}
@@ -327,17 +324,21 @@ public class Channel implements PropertyChangeListener {
 	 * Unsubscribes this device from receiving further updates from this channel
 	 */
 	public void unsubscribe() {
-		Telepat.getInstance().getAPIInstance().unsubscribe(getSubscribingRequestBody()).enqueue(new Callback<HashMap<String, String>>() {
+		Telepat.getInstance().getAPIInstance().unsubscribe(getSubscribingRequestBody()).enqueue(new Callback<GenericApiResponse>() {
 			@Override
-			public void onResponse(Call<HashMap<String, String>> call, Response<HashMap<String, String>> response) {
-				TelepatLogger.log("Unsubscribed");
-				dbInstance.
-						deleteChannelObjects(Channel.this.getSubscriptionIdentifier());
+			public void onResponse(Call<GenericApiResponse> call, Response<GenericApiResponse> response) {
+				if(response.isSuccessful()){
+					TelepatLogger.log("Unsubscribed");
+					dbInstance.
+							deleteChannelObjects(Channel.this.getSubscriptionIdentifier());
+				}else {
+					TelepatLogger.log("Unsubscribe failed: " + ApiError.parseError(response).message());
+				}
 			}
 
 			@Override
-			public void onFailure(Call<HashMap<String, String>> call, Throwable t) {
-				TelepatLogger.log("Unsubscribe failed: " + t.getMessage());
+			public void onFailure(Call<GenericApiResponse> call, Throwable t) {
+				TelepatLogger.error(t.getMessage());
 			}
 		});
 	}

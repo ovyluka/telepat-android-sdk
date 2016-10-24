@@ -21,6 +21,8 @@ public final class TelepatConstants
 
 	public static String GCM_SENDER_ID = "361851333269";
 
+	public static final String CODE_TOKEN_EXPIRED = "046";
+
 	private TelepatConstants() {
 	}
 }

@@ -16,6 +16,7 @@ public class ApiError {
 
     private int status;
     private String message;
+    private String code;
 
     public int status() {
         return status;
@@ -23,6 +24,10 @@ public class ApiError {
 
     public String message() {
         return message;
+    }
+
+    public String code(){
+        return code;
     }
 
 

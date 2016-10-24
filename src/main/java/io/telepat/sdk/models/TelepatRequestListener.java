@@ -5,5 +5,5 @@ package io.telepat.sdk.models;
  */
 public interface TelepatRequestListener {
     void onSuccess();
-    void onError(Throwable error);
+    void onError(String error);
 }

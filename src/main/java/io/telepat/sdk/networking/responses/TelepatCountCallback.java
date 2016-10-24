@@ -7,5 +7,5 @@ package io.telepat.sdk.networking.responses;
  */
 public interface TelepatCountCallback {
     void onSuccess(int number, Double aggregationResult);
-    void onFailure(Throwable error);
+    void onFailure(String error);
 }
