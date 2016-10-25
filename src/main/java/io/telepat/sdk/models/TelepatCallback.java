@@ -30,7 +30,9 @@ public abstract class TelepatCallback implements Callback<GenericApiResponse> {
             success(response.body());
         } else {
             ApiError apiError = ApiError.parseError(response);
-            if (apiError.code().equals(TelepatConstants.CODE_TOKEN_EXPIRED)) {
+            if ((apiError.code().equals(TelepatConstants.CODE_TOKEN_EXPIRED) && apiError.status() == 401) ||
+                    (apiError.code().equals("002") && apiError.status() == 500) ||
+                    (apiError.code().equals(TelepatConstants.CODE_TOKEN_EXPIRED) && apiError.status() == 400)) {
                 final Call<GenericApiResponse> newCall = call.clone();
                 if(!isRefreshTokenCalled) {
                     isRefreshTokenCalled = true;
