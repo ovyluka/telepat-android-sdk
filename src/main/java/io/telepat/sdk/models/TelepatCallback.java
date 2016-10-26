@@ -29,7 +29,7 @@ public abstract class TelepatCallback implements Callback<GenericApiResponse> {
         if (response.isSuccessful()) {
             success(response.body());
         } else {
-            ApiError apiError = ApiError.parseError(response);
+            final ApiError apiError = ApiError.parseError(response);
             if ((apiError.code().equals(TelepatConstants.CODE_TOKEN_EXPIRED) && apiError.status() == 401) ||
                     (apiError.code().equals("002") && apiError.status() == 500) ||
                     (apiError.code().equals(TelepatConstants.CODE_TOKEN_EXPIRED) && apiError.status() == 400)) {
@@ -43,9 +43,10 @@ public abstract class TelepatCallback implements Callback<GenericApiResponse> {
                         }
 
                         @Override
-                        public void onError(String error) {
-//                            failure();
+                        public void onError(ApiError error) {
+                            failure(apiError);
                         }
+
                     });
                 }
             }else{

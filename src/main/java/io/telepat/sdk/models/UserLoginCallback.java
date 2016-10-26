@@ -67,14 +67,13 @@ public class UserLoginCallback implements Callback<GenericApiResponse> {
             }
 
             if (loginListener != null)
-                loginListener.onError(apiError.message());
+                loginListener.onError(apiError);
         }
     }
 
     @Override
     public void onFailure(Call<GenericApiResponse> call, Throwable t) {
-        TelepatLogger.log("User login failed. " + t.getMessage());
-
+       t.printStackTrace();
     }
 }
 

@@ -876,38 +876,22 @@ public final class Telepat {
         apiClient.proxy(request).enqueue(new Callback<Response>() {
             @Override
             public void onResponse(Call<Response> call, Response<Response> response) {
-                //Try to get response body
-//				BufferedReader reader = null;
-//				StringBuilder sb = new StringBuilder();
-//				try {
-//
-//					reader = new BufferedReader(new InputStreamReader(response.body().));
-//					String line;
-//
-//					try {
-//						while ((line = reader.readLine()) != null) {
-//							sb.append(line);
-//						}
-//					} catch (IOException e) {
-//						e.printStackTrace();
-//					}
-//				} catch (IOException e) {
-//					e.printStackTrace();
-//				}
-
-                String responseBody = response.body().toString();
-                if (callback != null) {
-                    callback.onRequestFinished(responseBody, response.headers());
+                if (response.isSuccessful()) {
+                    String responseBody = response.body().toString();
+                    if (callback != null) {
+                        callback.onRequestFinished(responseBody, response.headers());
+                    }
+                } else {
+                    if (callback != null) {
+                        callback.onTelepatError(ApiError.parseError(response));
+                    }
                 }
-
-                // TODO: 12/10/2016 handle error
             }
 
             @Override
             public void onFailure(Call<Response> call, Throwable t) {
-                if (callback != null) {
-                    callback.onTelepatError(t);
-                }
+                TelepatLogger.error(t.getMessage());
+                t.printStackTrace();
             }
         });
     }

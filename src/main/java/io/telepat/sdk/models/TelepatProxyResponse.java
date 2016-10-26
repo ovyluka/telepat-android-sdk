@@ -1,6 +1,7 @@
 package io.telepat.sdk.models;
 
 
+import io.telepat.sdk.networking.responses.ApiError;
 import okhttp3.Headers;
 
 /**
@@ -9,5 +10,5 @@ import okhttp3.Headers;
  */
 public interface TelepatProxyResponse {
     void onRequestFinished(String responseBody, Headers responseHeaders);
-    void onTelepatError(Throwable error);
+    void onTelepatError(ApiError error);
 }
