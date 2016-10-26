@@ -221,14 +221,14 @@ public final class Telepat {
                 @Override
                 public void success(GenericApiResponse apiResponse) {
                     TelepatLogger.log("Register device success");
-                    if (apiResponse.status == 200 && apiResponse.content.get("identifier") != null) {
-                        requestInterceptor.setUdid((String) apiResponse.content.get("identifier"));
+                    if (apiResponse.status == 200 && apiResponse.getContent().get("identifier") != null) {
+                        requestInterceptor.setUdid((String) apiResponse.getContent().get("identifier"));
                         internalDB.setOperationsData(TelepatConstants.UDID_KEY,
-                                apiResponse.content.get("identifier"));
+                                apiResponse.getContent().get("identifier"));
                         for (ContextUpdateListener listener : Telepat.this.contextUpdateListeners) {
                             listener.deviceRegisterSuccess();
                         }
-                        TelepatLogger.log("Received Telepat UDID: " + apiResponse.content.get("identifier"));
+                        TelepatLogger.log("Received Telepat UDID: " + apiResponse.getContent().get("identifier"));
                     }
                 }
 
@@ -411,6 +411,7 @@ public final class Telepat {
                 }
 
             });
+
         }
     }
 

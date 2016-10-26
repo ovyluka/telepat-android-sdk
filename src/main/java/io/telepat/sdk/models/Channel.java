@@ -136,50 +136,44 @@ public class Channel implements PropertyChangeListener {
 	 * If the device is already registered, the stored objects will be notified again.
 	 */
 	private void doSubscribe(int offset, int limit, boolean justInitialState) {
-		apiInstance.subscribe(getSubscribingRequestBody(offset,limit,justInitialState)).enqueue(new Callback<GenericApiResponse>() {
+		apiInstance.subscribe(getSubscribingRequestBody(offset, limit, justInitialState)).enqueue(new TelepatCallback() {
 			@Override
-			public void onResponse(Call<GenericApiResponse> call, Response<GenericApiResponse> response) {
-				if(response.isSuccessful()){
-					Integer status = response.body().status;
-					JsonElement message = (JsonElement) response.body().content.get("content");
-					if (status == 200) {
-						Telepat.getInstance().registerSubscription(Channel.this);
+			public void success(GenericApiResponse apiResponse) {
+				Integer status = apiResponse.status;
+				JsonElement message = apiResponse.content;
+				if (status == 200) {
+					Telepat.getInstance().registerSubscription(Channel.this);
 
-						for (JsonElement entry
-								: message.getAsJsonArray()) {
-							processNotification(new TransportNotification(entry));
-						}
-
-						if (Channel.this.mChannelEventListener != null) {
-							mChannelEventListener.onSubscribeComplete();
-						}
-
-					}else{
-						if (Channel.this.mChannelEventListener != null)
-							Channel.this.mChannelEventListener.onError(status, message.toString());
+					for (JsonElement entry : message.getAsJsonArray()) {
+						processNotification(new TransportNotification(entry));
 					}
+
+					if (Channel.this.mChannelEventListener != null) {
+						mChannelEventListener.onSubscribeComplete();
+					}
+
 				}else{
-					ApiError apiError = ApiError.parseError(response);
-					if(apiError.status() == 409){
-						TelepatLogger.log("There is an already active subscription for this channel.");
-						if (Channel.this.mChannelEventListener != null) {
-							mChannelEventListener.onSubscribeComplete();
-						}
-					}else if (apiError.status() == 401){
-						TelepatLogger.log("Not logged in.");
-					}else {
-						TelepatLogger.log("Error subscribing: " + apiError.message());
-					}
-
-					if (mChannelEventListener != null) {
-						mChannelEventListener.onError(apiError.status(), apiError.message());
-					}
+					if (Channel.this.mChannelEventListener != null)
+						Channel.this.mChannelEventListener.onError(status, message.toString());
 				}
 			}
 
 			@Override
-			public void onFailure(Call<GenericApiResponse> call, Throwable t) {
-				TelepatLogger.error(t.getMessage());
+			public void failure(ApiError error) {
+				if(error.status() == 409){
+					TelepatLogger.log("There is an already active subscription for this channel.");
+					if (Channel.this.mChannelEventListener != null) {
+						mChannelEventListener.onSubscribeComplete();
+					}
+				}else if (error.status() == 401){
+					TelepatLogger.log("Not logged in.");
+				}else {
+					TelepatLogger.log("Error subscribing: " + error.message());
+				}
+
+				if (mChannelEventListener != null) {
+					mChannelEventListener.onError(error.status(), error.message());
+				}
 			}
 		});
 	}
@@ -221,8 +215,8 @@ public class Channel implements PropertyChangeListener {
 			@Override
 			public void onResponse(Call<GenericApiResponse> call, Response<GenericApiResponse> response) {
 				if(response.isSuccessful()) {
-					int countValue = ((Double) response.body().content.get("count")).intValue();
-					Double aggregationValue = ((Double) response.body().content.get("aggregation"));
+					int countValue = ((Double) response.body().getContent().get("count")).intValue();
+					Double aggregationValue = ((Double) response.body().getContent().get("aggregation"));
 					callback.onSuccess(countValue, aggregationValue);
 				}else{
 					callback.onFailure(ApiError.parseError(response).message());
