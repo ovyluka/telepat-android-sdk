@@ -22,7 +22,7 @@ public abstract class TelepatCallback implements Callback<GenericApiResponse> {
 
     public abstract void success(GenericApiResponse apiResponse);
 
-    public abstract void failure();
+    public abstract void failure(ApiError error);
 
     @Override
     public void onResponse(Call<GenericApiResponse> call, Response<GenericApiResponse> response) {
@@ -44,12 +44,12 @@ public abstract class TelepatCallback implements Callback<GenericApiResponse> {
 
                         @Override
                         public void onError(String error) {
-                            failure();
+//                            failure();
                         }
                     });
                 }
             }else{
-                failure();
+                failure(apiError);
             }
         }
     }

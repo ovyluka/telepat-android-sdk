@@ -233,9 +233,10 @@ public final class Telepat {
                 }
 
                 @Override
-                public void failure() {
-                    TelepatLogger.log("Register device failure.");
+                public void failure(ApiError error) {
+                    TelepatLogger.log("Register device failure. " + error.message());
                 }
+
             });
         } //else {
         //TODO send update
@@ -324,7 +325,7 @@ public final class Telepat {
                     } else {
 
                         TelepatLogger.error("user register failed");
-                        loginListener.onError(apiError.message());
+                        loginListener.onError(apiError);
                     }
                 }
             }
@@ -405,9 +406,10 @@ public final class Telepat {
                 }
 
                 @Override
-                public void failure() {
-                    listener.onUserCreateFailure("Create user failed");
+                public void failure(ApiError error) {
+                    listener.onUserCreateFailure(error);
                 }
+
             });
         }
     }
@@ -476,9 +478,10 @@ public final class Telepat {
             }
 
             @Override
-            public void failure() {
-                TelepatLogger.error("user logout failed");
+            public void failure(ApiError error) {
+                TelepatLogger.error(error.message());
             }
+
         });
     }
 
@@ -519,10 +522,11 @@ public final class Telepat {
             }
 
             @Override
-            public void failure() {
-                TelepatLogger.log("Reset request failed");
-                listener.onError("Reset request failed");
+            public void failure(ApiError error) {
+                TelepatLogger.error(error.message());
+                listener.onError(error);
             }
+
         });
     }
 
@@ -554,10 +558,11 @@ public final class Telepat {
             }
 
             @Override
-            public void failure() {
-                TelepatLogger.log("Password reset failed");
-                listener.onError("Password reset failed");
+            public void failure(ApiError error) {
+                TelepatLogger.error(error.message());
+                listener.onError(error);
             }
+
         });
     }
 
@@ -586,8 +591,8 @@ public final class Telepat {
             }
 
             @Override
-            public void failure() {
-                listener.onError("Update user metadata");
+            public void failure(ApiError error) {
+                listener.onError(error);
             }
         });
     }
@@ -805,9 +810,10 @@ public final class Telepat {
             }
 
             @Override
-            public void failure() {
-                listener.onError("Update user failed");
+            public void failure(ApiError error) {
+                listener.onError(error);
             }
+
         });
     }
 
