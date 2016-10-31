@@ -2,7 +2,6 @@ package io.telepat.sdk.models;
 
 import java.util.HashMap;
 
-import io.telepat.sdk.Telepat;
 import io.telepat.sdk.data.TelepatInternalDB;
 import io.telepat.sdk.networking.OctopusRequestInterceptor;
 import io.telepat.sdk.networking.responses.ApiError;
@@ -31,13 +30,11 @@ public class UserLoginCallback extends TelepatCallback {
 
     private void persistLoginData(HashMap<String, Object> loginData) {
 //        String expiredToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6Im92aWRpdS5sdWNhQGFwcHNjZW5kLmNvbSIsImlkIjoiODM3ZmM5NWItOGRmNi00OWIzLWFjOWQtYWRiODgxNWI3MzE4IiwiaWF0IjoxNDc2MTExNTkxLCJleHAiOjE0NzYxMTUxOTF9.5uHdM3qXzYk-dD87rVoqvV92rweomRQce1AdnAY0Dr8";
-            if (!Telepat.getInstance().isDebugMode) {
                 internalDB.setOperationsData(TelepatConstants.JWT_KEY, loginData.get("token"));
                 interceptor.setAuthorizationToken((String) loginData.get("token"));
-        }
 
         TelepatLogger.log("token::: " + interceptor.getAuthorizationToken());
-        
+
         if(loginData.containsKey("user")) {
             internalDB.setOperationsData(TelepatConstants.CURRENT_USER_DATA, loginData.get("user"));
         }
