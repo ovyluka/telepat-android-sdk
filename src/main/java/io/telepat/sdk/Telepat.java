@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import io.telepat.BuildConfig;
 import io.telepat.sdk.data.TelepatInternalDB;
 import io.telepat.sdk.data.TelepatSnappyDb;
 import io.telepat.sdk.models.Channel;
@@ -149,7 +148,7 @@ public final class Telepat {
         appId = clientAppId;
         TelepatConstants.GCM_SENDER_ID = senderId;
         initHTTPClient(telepatEndpoint, clientApiKey, clientAppId);
-        new GcmRegistrar(mContext).initGcmRegistration();
+//        new GcmRegistrar(mContext).initGcmRegistration();
 
         String JWTtoken = (String) internalDB.getOperationsData(TelepatConstants.JWT_KEY, null, String.class);
         if (JWTtoken != null) {
@@ -161,7 +160,7 @@ public final class Telepat {
 //		String registrationId = (String) Telepat.getInstance()
 //				.getDBInstance()
 //				.getOperationsData(GcmRegistrar.PROPERTY_REG_ID, "", String.class);
-        TelepatLogger.log("Initialized Telepat Android SDK version " + BuildConfig.VERSION_NAME);
+//        TelepatLogger.log("Initialized Telepat Android SDK version " + BuildConfig.VERSION_NAME);
     }
 
     /**
