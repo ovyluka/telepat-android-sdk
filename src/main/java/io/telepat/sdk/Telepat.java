@@ -2,6 +2,9 @@ package io.telepat.sdk;
 
 import android.content.Context;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -35,7 +38,6 @@ import io.telepat.sdk.networking.responses.ApiError;
 import io.telepat.sdk.networking.responses.ContextsApiResponse;
 import io.telepat.sdk.networking.responses.GenericApiResponse;
 import io.telepat.sdk.networking.responses.TelepatCountCallback;
-import io.telepat.sdk.networking.transports.gcm.GcmRegistrar;
 import io.telepat.sdk.utilities.TelepatConstants;
 import io.telepat.sdk.utilities.TelepatLogger;
 import okhttp3.OkHttpClient;
@@ -143,26 +145,42 @@ public final class Telepat {
                            final String clientApiKey,
                            final String clientAppId,
                            String senderId) {
-        mContext = context.getApplicationContext();
-        internalDB = new TelepatSnappyDb(context);
-        appId = clientAppId;
-        TelepatConstants.GCM_SENDER_ID = senderId;
-        initHTTPClient(telepatEndpoint, clientApiKey, clientAppId);
-//        new GcmRegistrar(mContext).initGcmRegistration();
 
-        String JWTtoken = (String) internalDB.getOperationsData(TelepatConstants.JWT_KEY, null, String.class);
-        if (JWTtoken != null) {
-            requestInterceptor.setAuthorizationToken(JWTtoken);
-            refreshToken(null);
+        try {
+            if (isGooglePlayServicesAvailable(context)) {
+                mContext = context.getApplicationContext();
+                internalDB = new TelepatSnappyDb(context);
+                appId = clientAppId;
+                TelepatConstants.GCM_SENDER_ID = senderId;
+                initHTTPClient(telepatEndpoint, clientApiKey, clientAppId);
+                //        new GcmRegistrar(mContext).initGcmRegistration();
+
+                String JWTtoken = (String) internalDB.getOperationsData(TelepatConstants.JWT_KEY, null, String.class);
+                if (JWTtoken != null) {
+                    requestInterceptor.setAuthorizationToken(JWTtoken);
+                    refreshToken(null);
+                }
+
+                requestContexts();
+                //		String registrationId = (String) Telepat.getInstance()
+                //				.getDBInstance()
+                //				.getOperationsData(GcmRegistrar.PROPERTY_REG_ID, "", String.class);
+                //        TelepatLogger.log("Initialized Telepat Android SDK version " + BuildConfig.VERSION_NAME);
+            }
+        } catch (GooglePlayServicesNotAvailableException e) {
+            e.printStackTrace();
         }
-
-        requestContexts();
-//		String registrationId = (String) Telepat.getInstance()
-//				.getDBInstance()
-//				.getOperationsData(GcmRegistrar.PROPERTY_REG_ID, "", String.class);
-//        TelepatLogger.log("Initialized Telepat Android SDK version " + BuildConfig.VERSION_NAME);
     }
 
+
+    public boolean isGooglePlayServicesAvailable(Context context) throws GooglePlayServicesNotAvailableException {
+        GoogleApiAvailability googleApiAvailability = GoogleApiAvailability.getInstance();
+        int status = googleApiAvailability.isGooglePlayServicesAvailable(context);
+        if (status != ConnectionResult.SUCCESS) {
+            throw new GooglePlayServicesNotAvailableException(status);
+        }
+        return true;
+    }
     /**
      * Close the current Telepat instance. You should reinitialize the Telepat SDK before doing
      * additional work.

@@ -14,6 +14,7 @@ import io.telepat.sdk.utilities.TelepatLogger;
 
 /**
  * Created by ovidiuluca on 01/11/2016.
+ * 
  */
 
 public class TelepatFirebaseMessagingService extends FirebaseMessagingService {
@@ -21,9 +22,7 @@ public class TelepatFirebaseMessagingService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         TelepatLogger.log("Received message is: " + remoteMessage.getData().get("data"));
-
         if (remoteMessage.getData() != null && remoteMessage.getData().size() > 0) {
-
             JsonObject jsonObject = jsonParser.fromJson(remoteMessage.getData().get("data"), JsonObject.class);
             try {
                 JsonArray newObjects = (JsonArray) jsonObject.get("new");
@@ -39,6 +38,7 @@ public class TelepatFirebaseMessagingService extends FirebaseMessagingService {
                 ex.printStackTrace();
             }
         }
+
     }
 
     /**
