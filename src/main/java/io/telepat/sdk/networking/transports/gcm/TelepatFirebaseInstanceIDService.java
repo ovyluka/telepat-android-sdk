@@ -10,7 +10,6 @@ import io.telepat.sdk.utilities.TelepatConstants;
 import io.telepat.sdk.utilities.TelepatLogger;
 import io.telepat.sdk.utilities.TelepatUtilities;
 
-import static io.telepat.sdk.networking.transports.gcm.GcmRegistrar.PROPERTY_REG_ID;
 
 /**
  * Created by ovidiuluca on 01/11/2016.
@@ -19,6 +18,7 @@ import static io.telepat.sdk.networking.transports.gcm.GcmRegistrar.PROPERTY_REG
 public class TelepatFirebaseInstanceIDService extends FirebaseInstanceIdService {
 
     private static final String PROPERTY_APP_VERSION = "appVersion";
+    public static final  String PROPERTY_REG_ID      = "registration_id";
 
     /**
      * Called if InstanceID token is updated. This may occur if the security of
