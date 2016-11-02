@@ -33,6 +33,7 @@ public class GcmIntentService extends IntentService
 
 	@Override
 	protected void onHandleIntent(Intent intent) {
+		TelepatLogger.log("onHandleIntent::: "+intent.getStringExtra("data"));
 		if(intent.getStringExtra("data") != null) {
 			TelepatLogger.log("we have data");
 			String data = intent.getStringExtra("data");
