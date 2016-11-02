@@ -211,22 +211,17 @@ public class Channel implements PropertyChangeListener {
 			}
 		}
 
-		apiInstance.count(countRequestBody).enqueue(new Callback<GenericApiResponse>() {
+		apiInstance.count(countRequestBody).enqueue(new TelepatCallback() {
 			@Override
-			public void onResponse(Call<GenericApiResponse> call, Response<GenericApiResponse> response) {
-				if(response.isSuccessful()) {
-					int countValue = ((Double) response.body().getContent().get("count")).intValue();
-					Double aggregationValue = ((Double) response.body().getContent().get("aggregation"));
-					callback.onSuccess(countValue, aggregationValue);
-				}else{
-					callback.onFailure(ApiError.parseError(response).message());
-				}
-
+			public void success(GenericApiResponse apiResponse) {
+				int countValue = Integer.parseInt(apiResponse.getContent().get("count").toString());
+				Double aggregationValue = Double.parseDouble(apiResponse.getContent().get("aggregation").toString());
+				callback.onSuccess(countValue, aggregationValue);
 			}
 
 			@Override
-			public void onFailure(Call<GenericApiResponse> call, Throwable t) {
-				TelepatLogger.error(t.getMessage());
+			public void failure(ApiError error) {
+				callback.onFailure(error.message());
 			}
 		});
 	}
