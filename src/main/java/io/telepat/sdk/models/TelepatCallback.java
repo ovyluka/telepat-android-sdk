@@ -58,5 +58,6 @@ public abstract class TelepatCallback implements Callback<GenericApiResponse> {
     @Override
     public void onFailure(Call<GenericApiResponse> call, Throwable t) {
         TelepatLogger.error(t.getMessage());
+        t.printStackTrace();
     }
 }

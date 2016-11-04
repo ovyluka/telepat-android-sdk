@@ -6,6 +6,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
@@ -41,6 +42,7 @@ import io.telepat.sdk.networking.responses.TelepatCountCallback;
 import io.telepat.sdk.utilities.TelepatConstants;
 import io.telepat.sdk.utilities.TelepatLogger;
 import okhttp3.OkHttpClient;
+import okhttp3.ResponseBody;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -206,9 +208,11 @@ public final class Telepat {
         okHttpClient.interceptors().add(requestInterceptor);
         okHttpClient.interceptors().add(loggingInterceptor);
 
+        Gson gson = new GsonBuilder().setLenient().create();
+
          retrofit = new Retrofit.Builder()
                 .client(okHttpClient.build())
-                .addConverterFactory(GsonConverterFactory.create())
+                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .baseUrl(telepatEndpoint).build();
         apiClient = retrofit.create(OctopusApi.class);
     }
@@ -980,5 +984,9 @@ public final class Telepat {
         requestBody.put("indexedProperty", indexedPropertyName);
         requestBody.put("member", memberPropertyValue);
         getAPIInstance().removeFromIndexedList(requestBody).enqueue(callback);
+    }
+
+    public void downloadFileFromUrl(String fileUrl, Callback<ResponseBody> callback) {
+        getAPIInstance().downloadFileFromUrl(fileUrl).enqueue(callback);
     }
 }

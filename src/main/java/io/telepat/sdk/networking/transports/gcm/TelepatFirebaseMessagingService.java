@@ -7,10 +7,17 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import org.json.JSONException;
+
 import io.telepat.sdk.Telepat;
 import io.telepat.sdk.models.Channel;
 import io.telepat.sdk.models.TransportNotification;
 import io.telepat.sdk.utilities.TelepatLogger;
+import io.telepat.sdk.utilities.TelepatUtilities;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * Created by ovidiuluca on 01/11/2016.
@@ -20,25 +27,55 @@ import io.telepat.sdk.utilities.TelepatLogger;
 public class TelepatFirebaseMessagingService extends FirebaseMessagingService {
     private final Gson jsonParser = new Gson();
     @Override
-    public void onMessageReceived(RemoteMessage remoteMessage) {
-        TelepatLogger.log("Received message is: " + remoteMessage.getData().get("data"));
-        if (remoteMessage.getData() != null && remoteMessage.getData().size() > 0) {
-            JsonObject jsonObject = jsonParser.fromJson(remoteMessage.getData().get("data"), JsonObject.class);
-            try {
-                JsonArray newObjects = (JsonArray) jsonObject.get("new");
-                JsonArray updatedObjects = (JsonArray) jsonObject.get("updated");
-                JsonArray deletedObjects = (JsonArray) jsonObject.get("deleted");
-                if (newObjects != null)
-                    prepareChannelNotification(newObjects, Channel.NotificationType.ObjectAdded);
-                if (updatedObjects != null)
-                    prepareChannelNotification(updatedObjects, Channel.NotificationType.ObjectUpdated);
-                if (deletedObjects != null)
-                    prepareChannelNotification(deletedObjects, Channel.NotificationType.ObjectDeleted);
-            } catch (NullPointerException ex) {
-                ex.printStackTrace();
-            }
+    public void onMessageReceived(final RemoteMessage remoteMessage) {
+
+        if (remoteMessage.getData().get("data") != null && remoteMessage.getData().size() > 0) {
+            TelepatLogger.log("Received message is: " + remoteMessage.getData().get("data"));
+            parseMessage(remoteMessage.getData().get("data"));
+        } else if (remoteMessage.getData().get("url") != null) {
+            TelepatLogger.log("Received message is: " + remoteMessage.getData().get("url"));
+
+            Telepat.getInstance().downloadFileFromUrl(remoteMessage.getData().get("url"), new Callback<ResponseBody>() {
+                @Override
+                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                    if (response.isSuccessful()) {
+                        try {
+                            String message = TelepatUtilities.convertStreamToString(response.body().byteStream());
+                            JsonObject jsonObject = jsonParser.fromJson(message, JsonObject.class);
+                            JsonObject data = (JsonObject) jsonObject.get("data");
+                            parseMessage(data.toString());
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                    } else {
+                        TelepatLogger.log("File download failed.");
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<ResponseBody> call, Throwable t) {
+                    t.printStackTrace();
+                }
+
+            });
         }
 
+    }
+
+    private void parseMessage(String message) {
+        JsonObject jsonObject = jsonParser.fromJson(message, JsonObject.class);
+        JsonArray newObjects = (JsonArray) jsonObject.get("new");
+        JsonArray updatedObjects = (JsonArray) jsonObject.get("updated");
+        JsonArray deletedObjects = (JsonArray) jsonObject.get("deleted");
+        if (newObjects != null)
+            prepareChannelNotification(newObjects, Channel.NotificationType.ObjectAdded);
+        if (updatedObjects != null)
+            prepareChannelNotification(updatedObjects, Channel.NotificationType.ObjectUpdated);
+        if (deletedObjects != null)
+            prepareChannelNotification(deletedObjects, Channel.NotificationType.ObjectDeleted);
     }
 
     /**

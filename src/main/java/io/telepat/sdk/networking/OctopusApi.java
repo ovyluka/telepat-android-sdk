@@ -1,19 +1,18 @@
 package io.telepat.sdk.networking;
 
-import com.google.gson.JsonElement;
-
-import java.util.HashMap;
 import java.util.Map;
 
 import io.telepat.sdk.models.TelepatProxyRequest;
 import io.telepat.sdk.networking.responses.ContextsApiResponse;
 import io.telepat.sdk.networking.responses.GenericApiResponse;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
+import retrofit2.http.Url;
 
 /**
  * Created by Andrei Marinescu on 02.06.2015.
@@ -178,4 +177,7 @@ public interface OctopusApi {
 
     @POST("/til/removeMember")
     Call<GenericApiResponse> removeFromIndexedList(@Body Map<String, String> body);
+
+    @GET
+    Call<ResponseBody> downloadFileFromUrl(@Url String fileUrl);
 }
